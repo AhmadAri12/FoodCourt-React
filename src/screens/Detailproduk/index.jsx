@@ -1,14 +1,19 @@
+// src/screens/Detailproduk/index.jsx
+
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Button, SafeAreaView } from 'react-native';
 
-const Detailproduk = () => {
+const Detailproduk = ({ route, navigation }) => {
+  const { product } = route.params; // Get product data from navigation params
+
   const [quantity, setQuantity] = useState(1);
   const [additionalItems, setAdditionalItems] = useState({
     kerupuk: false,
-    sayuran: false,
+    savuran: false,
     bumbuKacang: false,
   });
 
+  // Handle quantity changes (+ / -)
   const handleQuantityChange = (type) => {
     if (type === 'increase') {
       setQuantity(quantity + 1);
@@ -17,10 +22,31 @@ const Detailproduk = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    console.log('Added to Cart');
+  // Calculate total cost for additional items (e.g., Kerupuk, Savuran, Bumbu Kacang)
+  const calculateAdditionsTotal = () => {
+    let total = 0;
+    if (additionalItems.kerupuk) total += 5000;
+    if (additionalItems.savuran) total += 2000;
+    if (additionalItems.bumbuKacang) total += 4000;
+    return total;
   };
 
+  // Add item to cart
+  const handleAddToCart = () => {
+    const cartItem = {
+      productName: product.name,
+      quantity,
+      price: product.price,
+      productImage: product.image, // Pass the image URL as productImage
+      additionalItems: Object.keys(additionalItems).filter(item => additionalItems[item]),
+      total: product.price * quantity + calculateAdditionsTotal(), // Add additional item cost
+    };
+
+    // Navigate to Cart screen and pass cartItem data
+    navigation.navigate('Cart', { cartItems: [cartItem] });
+  };
+
+  // Toggle selection of additional items
   const toggleAdditionalItem = (item) => {
     setAdditionalItems({
       ...additionalItems,
@@ -31,17 +57,19 @@ const Detailproduk = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Image
-          source={{ uri: 'https://awsimages.detik.net.id/community/media/visual/2024/02/14/resep-gado-gado-siram.jpeg?w=1200' }}
-          style={styles.productImage}
-        />
-        <Text style={styles.productTitle}>Gado Gado</Text>
+        {/* Product Image */}
+        <Image source={{ uri: product.image }} style={styles.productImage} />
+        
+        {/* Product Title and Rating */}
+        <Text style={styles.productTitle}>{product.name}</Text>
         <Text style={styles.productRating}>⭐ 4.5 (70+ Reviews)</Text>
+
+        {/* Product Description */}
         <Text style={styles.productDescription}>
-          Gado-gado makanan khas Jakarta berisi sayur-sayuran yang direbus, irisan telur dan tahu,
-          serta ditaburi bawang goreng dan rasa kasih sayang.
+          {product.description}
         </Text>
 
+        {/* Additional Items */}
         <Text style={styles.addOnTitle}>Tambahan</Text>
         <View style={styles.addOnContainer}>
           <TouchableOpacity
@@ -51,10 +79,10 @@ const Detailproduk = () => {
             <Text style={styles.addOnText}>Kerupuk (Rp 5000)</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.addOnButton, additionalItems.sayuran && styles.selected]}
-            onPress={() => toggleAdditionalItem('sayuran')}
+            style={[styles.addOnButton, additionalItems.savuran && styles.selected]}
+            onPress={() => toggleAdditionalItem('savuran')}
           >
-            <Text style={styles.addOnText}>Sayuran (Rp 2000)</Text>
+            <Text style={styles.addOnText}>Savuran (Rp 2000)</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.addOnButton, additionalItems.bumbuKacang && styles.selected]}
@@ -64,6 +92,7 @@ const Detailproduk = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Quantity Control */}
         <View style={styles.quantityContainer}>
           <TouchableOpacity onPress={() => handleQuantityChange('decrease')} style={styles.quantityButton}>
             <Text style={styles.quantityText}>-</Text>
@@ -74,6 +103,7 @@ const Detailproduk = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Add to Cart Button */}
         <Button title="Tambah Ke Troli" onPress={handleAddToCart} color="#FF7F50" />
       </ScrollView>
     </SafeAreaView>
@@ -84,17 +114,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 40, // Menambahkan padding khusus agar konten tidak tertutup navbar
+    paddingTop: 40, // Padding for top bar
   },
   scrollContent: {
-    paddingBottom: 20, // Memberikan padding bawah
+    paddingBottom: 20,
     paddingHorizontal: 16,
   },
   productImage: {
     width: '100%',
     height: 200,
     marginBottom: 16,
-    borderRadius: 8, // optional for styling
+    borderRadius: 8,
   },
   productTitle: {
     fontSize: 24,

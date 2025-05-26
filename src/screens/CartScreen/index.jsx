@@ -1,83 +1,102 @@
+// src/screens/CartScreen/index.jsx
+
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Button, Image } from 'react-native';
 
-export const CartScreen = () => {
-  const [quantity, setQuantity] = useState(2); // Jumlah produk yang ada di troli
-  const [voucher, setVoucher] = useState(''); // Voucher input
-  const [note, setNote] = useState(''); // Catatan input
+const CartScreen = ({ route, navigation }) => {
+  const { cartItems } = route.params;
 
-  const productPrice = 15000; // Harga per item
-  const subTotal = productPrice * quantity;
-  const shippingFee = 6000;
-  const total = subTotal + shippingFee;
+  // State for managing quantity changes in the cart
+  const [updatedCartItems, setUpdatedCartItems] = useState(cartItems);
 
-  const handleQuantityChange = (type) => {
+  // Update the quantity of an item
+  const handleQuantityChange = (index, type) => {
+    let newCartItems = [...updatedCartItems];
     if (type === 'increase') {
-      setQuantity(quantity + 1);
-    } else if (type === 'decrease' && quantity > 1) {
-      setQuantity(quantity - 1);
+      newCartItems[index].quantity += 1;
+    } else if (type === 'decrease' && newCartItems[index].quantity > 1) {
+      newCartItems[index].quantity -= 1;
     }
+    setUpdatedCartItems(newCartItems);
+  };
+
+  // Calculate total price for a single cart item (price * quantity + additional items)
+  const calculateItemTotal = (item) => {
+    const additionalItemsTotal = calculateAdditionsTotal(item);
+    return item.price * item.quantity + additionalItemsTotal;
+  };
+
+  // Calculate the total for additional items (e.g., Kerupuk, Savuran, Bumbu Kacang)
+  const calculateAdditionsTotal = (item) => {
+    let total = 0;
+    if (item.additionalItems.includes('kerupuk')) total += 5000;
+    if (item.additionalItems.includes('savuran')) total += 2000;
+    if (item.additionalItems.includes('bumbuKacang')) total += 4000;
+    return total;
+  };
+
+  // Calculate the subtotal by summing up the total of all cart items
+  const calculateSubtotal = () => {
+    return updatedCartItems.reduce((total, item) => total + calculateItemTotal(item), 0);
+  };
+
+  // Shipping fee
+  const shippingFee = 6000;
+  const subtotal = calculateSubtotal();
+  const total = subtotal + shippingFee;
+
+  // Remove an item from the cart
+  const handleRemoveItem = (index) => {
+    let newCartItems = updatedCartItems.filter((_, i) => i !== index);
+    setUpdatedCartItems(newCartItems);
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <Text style={styles.title}>Troli</Text>
+    <View style={styles.container}>
 
-      {/* Produk */}
-      <View style={styles.productContainer}>
-        <Image
-          source={{ uri: 'https://awsimages.detik.net.id/community/media/visual/2024/02/14/resep-gado-gado-siram.jpeg?w=1200' }}
-          style={styles.productImage}
-        />
-        <View style={styles.productDetails}>
-          <Text style={styles.productName}>Gado Gado</Text>
-          <Text style={styles.productSubTitle}>Bumbu Kacang</Text>
-          <Text style={styles.productPrice}>Rp {productPrice.toLocaleString()}</Text>
-        </View>
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity onPress={() => handleQuantityChange('decrease')} style={styles.quantityButton}>
-            <Text style={styles.quantityText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.quantityValue}>{quantity}</Text>
-          <TouchableOpacity onPress={() => handleQuantityChange('increase')} style={styles.quantityButton}>
-            <Text style={styles.quantityText}>+</Text>
-          </TouchableOpacity>
-        </View>
+      {/* List of cart items */}
+      <FlatList
+        data={updatedCartItems}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <View style={styles.cartItem}>
+            <Image source={{ uri: item.productImage }} style={styles.productImage} />
+            <View style={styles.cartItemDetails}>
+              <Text style={styles.productName}>{item.productName}</Text>
+              <Text style={styles.productPrice}>Rp {item.price}</Text>
+              <Text style={styles.quantityText}>Jumlah: {item.quantity}</Text>
+              {item.additionalItems.length > 0 && (
+                <Text style={styles.additionalItemsText}>Tambahan: {item.additionalItems.join(', ')}</Text>
+              )}
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity onPress={() => handleQuantityChange(index, 'decrease')} style={styles.quantityButton}>
+                  <Text style={styles.quantityText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityValue}>{item.quantity}</Text>
+                <TouchableOpacity onPress={() => handleQuantityChange(index, 'increase')} style={styles.quantityButton}>
+                  <Text style={styles.quantityText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <TouchableOpacity onPress={() => handleRemoveItem(index)} style={styles.removeButton}>
+              <Text style={styles.removeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+
+      {/* Subtotal, shipping fee, and total */}
+      <View style={styles.totalContainer}>
+        <Text style={styles.totalText}>Sub Total: Rp {subtotal}</Text>
+        <Text style={styles.totalText}>Biaya Pengantaran: Rp {shippingFee}</Text>
+        <Text style={styles.totalText}>Total: Rp {total}</Text>
       </View>
 
-      {/* Voucher */}
-      <View style={styles.voucherContainer}>
-        <Text style={styles.voucherLabel}>Voucher</Text>
-        <TextInput
-          value={voucher}
-          onChangeText={setVoucher}
-          style={styles.voucherInput}
-          placeholder="Masukkan Kode Voucher"
-        />
-      </View>
-
-      {/* Catatan */}
-      <View style={styles.noteContainer}>
-        <Text style={styles.noteLabel}>Catatan</Text>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          style={styles.noteInput}
-          placeholder="Tinggalkan Pesan"
-        />
-      </View>
-
-      {/* Rincian Harga */}
-      <View style={styles.priceContainer}>
-        <Text style={styles.priceText}>Sub Total: Rp {subTotal.toLocaleString()}</Text>
-        <Text style={styles.priceText}>Biaya Pengantaran: Rp {shippingFee.toLocaleString()}</Text>
-        <Text style={styles.priceTextTotal}>Total: Rp {total.toLocaleString()}</Text>
-      </View>
-
-      {/* Tombol Checkout */}
-      <Button title="Checkout" onPress={() => console.log('Checkout pressed')} color="#FF7F50" />
-    </ScrollView>
+      {/* Checkout Button */}
+      <TouchableOpacity style={styles.checkoutButton} onPress={() => console.log('Proceed to checkout')}>
+        <Text style={styles.checkoutText}>Checkout</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -86,104 +105,93 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#fff',
-    paddingTop: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  productContainer: {
+  cartItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 16,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
   },
   productImage: {
-    width: 100,
-    height: 100,
-    marginRight: 16,
+    width: 80,
+    height: 80,
     borderRadius: 8,
   },
-  productDetails: {
+  cartItemDetails: {
     flex: 1,
+    marginLeft: 16,
   },
   productName: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  productSubTitle: {
-    fontSize: 14,
-    color: '#888',
-  },
   productPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 8,
+    color: '#888',
+  },
+  quantityText: {
+    fontSize: 14,
+    color: '#555',
+  },
+  additionalItemsText: {
+    fontSize: 14,
+    color: '#555',
   },
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    marginTop: 8,
   },
   quantityButton: {
     backgroundColor: '#FF7F50',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 8,
-  },
-  quantityText: {
-    color: '#fff',
-    fontSize: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   quantityValue: {
-    fontSize: 20,
+    fontSize: 18,
     marginHorizontal: 16,
   },
-  voucherContainer: {
-    marginBottom: 16,
+  removeButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
   },
-  voucherLabel: {
-    fontSize: 16,
+  removeText: {
+    fontSize: 18,
+    color: '#FF5A5F',
+  },
+  totalContainer: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    paddingTop: 16,
+  },
+  totalText: {
+    fontSize: 18,
+    marginBottom: 8,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
-  voucherInput: {
-    height: 40,
-    borderColor: '#ddd',
-    borderWidth: 1,
+  checkoutButton: {
+    backgroundColor: '#FF7F50',
+    paddingVertical: 12,
     borderRadius: 8,
-    paddingHorizontal: 12,
+    marginTop: 20,
+    alignItems: 'center',
   },
-  noteContainer: {
-    marginBottom: 16,
-  },
-  noteLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  noteInput: {
-    height: 80,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    textAlignVertical: 'top',
-  },
-  priceContainer: {
-    marginVertical: 16,
-  },
-  priceText: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  priceTextTotal: {
+  checkoutText: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 8,
   },
 });
+
+export default CartScreen;
