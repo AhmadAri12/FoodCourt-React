@@ -1,10 +1,10 @@
-// src/screens/HomeScreen/index.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { SafeAreaView, ScrollView, Text, View, TextInput, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
-import { Notification } from 'iconsax-react-native'; // Assuming you have icons installed
+import { Notification, Add } from 'iconsax-react-native';
+import { ProductContext } from '../../context/ProductContext';
 
 const HomeScreen = ({ navigation }) => {
+  const { products } = useContext(ProductContext);
   const [searchTerm, setSearchTerm] = useState('');
 
   const makananPopuler = [
@@ -25,10 +25,6 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   const handleSearch = (term) => setSearchTerm(term);
-
-  const handleCategoryPress = (category) => console.log(`${category} Pressed`);
-
-  const handleBannerPress = () => console.log('Banner diklik');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,78 +47,68 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         {/* Makanan Populer */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Makanan Populer</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionMore}>Lainnya</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {makananPopuler.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => navigation.navigate('DetailProduk', { product: item })} style={styles.foodCard}>
-                <Image source={{ uri: item.image }} style={styles.foodImage} />
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodPrice}>{item.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <ProductSection title="Makanan Populer" data={makananPopuler} navigation={navigation} />
 
         {/* Snack Populer */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Snack Populer</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionMore}>Lainnya</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {snackPopuler.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => navigation.navigate('DetailProduk', { product: item })} style={styles.foodCard}>
-                <Image source={{ uri: item.image }} style={styles.foodImage} />
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodPrice}>{item.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <ProductSection title="Snack Populer" data={snackPopuler} navigation={navigation} />
 
         {/* Minuman Populer */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Minuman Populer</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionMore}>Lainnya</Text>
-            </TouchableOpacity>
-          </View>
+        <ProductSection title="Minuman Populer" data={minumanPopuler} navigation={navigation} />
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {minumanPopuler.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => navigation.navigate('DetailProduk', { product: item })} style={styles.foodCard}>
-                <Image source={{ uri: item.image }} style={styles.foodImage} />
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodPrice}>{item.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {/* Produk Tambahan dari Context */}
+        {products.length > 0 && (
+          <ProductSection title="Menu Terbaru" data={products} navigation={navigation} isCustom />
+        )}
       </ScrollView>
+
+      {/* Tombol Tambah Produk */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('TambahProduk')}
+      >
+        <Add size={28} color="#fff" variant="Bold" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
+
+// Komponen untuk menampilkan section produk
+const ProductSection = ({ title, data, navigation, isCustom = false }) => (
+  <View style={styles.section}>
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <TouchableOpacity><Text style={styles.sectionMore}>Lainnya</Text></TouchableOpacity>
+    </View>
+
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {data.map((item, index) => (
+        <TouchableOpacity
+          key={index}
+          onPress={() => navigation.navigate('DetailProduk', { product: item })}
+          style={styles.foodCard}
+        >
+          <Image source={{ uri: item.image }} style={styles.foodImage} />
+          <Text style={styles.foodName}>{item.name}</Text>
+          <Text style={styles.foodPrice}>
+            {isCustom
+              ? `Rp ${Number(item.price).toLocaleString('id-ID')}`
+              : item.price}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? 20 : 0, // Adjust top padding for status bar on Android
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   scrollContainer: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -149,19 +135,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 10,
   },
-  categoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-  },
-  categoryItem: {
-    paddingVertical: 8,
-  },
-  categoryText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFA500',
-  },
   section: {
     marginBottom: 24,
   },
@@ -177,11 +150,11 @@ const styles = StyleSheet.create({
   sectionMore: {
     fontSize: 14,
     color: '#FF5A5F',
-    fontWeight: 'semi-bold',
   },
   foodCard: {
     marginRight: 16,
     alignItems: 'center',
+    width: 150,
   },
   foodImage: {
     width: 150,
@@ -192,10 +165,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginTop: 8,
+    textAlign: 'center',
   },
   foodPrice: {
     fontSize: 12,
     color: '#888',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#FF7F50',
+    padding: 16,
+    borderRadius: 50,
+    elevation: 4,
   },
 });
 

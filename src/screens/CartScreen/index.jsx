@@ -1,195 +1,237 @@
-// src/screens/CartScreen/index.jsx
-
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Button, Image } from 'react-native';
+import React, { useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { CartContext } from '../../context/CartContext'; // Import Context
 
 const CartScreen = ({ route, navigation }) => {
-  const { cartItems } = route.params;
+  const { cartItems, addItemToCart, removeItemFromCart, updateQuantity } = useContext(CartContext);
 
-  // State for managing quantity changes in the cart
-  const [updatedCartItems, setUpdatedCartItems] = useState(cartItems);
-
-  // Update the quantity of an item
-  const handleQuantityChange = (index, type) => {
-    let newCartItems = [...updatedCartItems];
-    if (type === 'increase') {
-      newCartItems[index].quantity += 1;
-    } else if (type === 'decrease' && newCartItems[index].quantity > 1) {
-      newCartItems[index].quantity -= 1;
+  useEffect(() => {
+    if (route.params?.newlyAddedItem) {
+      addItemToCart(route.params.newlyAddedItem);
+      navigation.setParams({ newlyAddedItem: undefined });
     }
-    setUpdatedCartItems(newCartItems);
-  };
+  }, [route.params?.newlyAddedItem]);
 
-  // Calculate total price for a single cart item (price * quantity + additional items)
-  const calculateItemTotal = (item) => {
-    const additionalItemsTotal = calculateAdditionsTotal(item);
-    return item.price * item.quantity + additionalItemsTotal;
-  };
-
-  // Calculate the total for additional items (e.g., Kerupuk, Savuran, Bumbu Kacang)
-  const calculateAdditionsTotal = (item) => {
-    let total = 0;
-    if (item.additionalItems.includes('kerupuk')) total += 5000;
-    if (item.additionalItems.includes('savuran')) total += 2000;
-    if (item.additionalItems.includes('bumbuKacang')) total += 4000;
-    return total;
-  };
-
-  // Calculate the subtotal by summing up the total of all cart items
-  const calculateSubtotal = () => {
-    return updatedCartItems.reduce((total, item) => total + calculateItemTotal(item), 0);
-  };
-
-  // Shipping fee
+  const calculateItemTotal = (item) => item.price * item.quantity;
+  const calculateSubtotal = () => cartItems.reduce((total, item) => total + calculateItemTotal(item), 0);
   const shippingFee = 6000;
   const subtotal = calculateSubtotal();
   const total = subtotal + shippingFee;
 
-  // Remove an item from the cart
-  const handleRemoveItem = (index) => {
-    let newCartItems = updatedCartItems.filter((_, i) => i !== index);
-    setUpdatedCartItems(newCartItems);
-  };
+  if (cartItems.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>Keranjang Anda masih kosong.</Text>
+        <TouchableOpacity style={styles.shopNowButton} onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.shopNowButtonText}>Belanja Sekarang</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-
-      {/* List of cart items */}
       <FlatList
-        data={updatedCartItems}
-        keyExtractor={(item, index) => index.toString()}
+        data={cartItems}
+        keyExtractor={(item, index) => `${item.productName}-${index}`}
         renderItem={({ item, index }) => (
           <View style={styles.cartItem}>
             <Image source={{ uri: item.productImage }} style={styles.productImage} />
             <View style={styles.cartItemDetails}>
               <Text style={styles.productName}>{item.productName}</Text>
-              <Text style={styles.productPrice}>Rp {item.price}</Text>
-              <Text style={styles.quantityText}>Jumlah: {item.quantity}</Text>
-              {item.additionalItems.length > 0 && (
-                <Text style={styles.additionalItemsText}>Tambahan: {item.additionalItems.join(', ')}</Text>
-              )}
-              <View style={styles.quantityContainer}>
-                <TouchableOpacity onPress={() => handleQuantityChange(index, 'decrease')} style={styles.quantityButton}>
-                  <Text style={styles.quantityText}>-</Text>
+              <Text style={styles.productPrice}>Rp {item.price.toLocaleString('id-ID')}</Text>
+              <View style={styles.quantityControlContainer}>
+                <TouchableOpacity onPress={() => updateQuantity(index, 'decrease')} style={styles.cartQuantityButton}>
+                  <Text style={styles.cartQuantityButtonText}>-</Text>
                 </TouchableOpacity>
-                <Text style={styles.quantityValue}>{item.quantity}</Text>
-                <TouchableOpacity onPress={() => handleQuantityChange(index, 'increase')} style={styles.quantityButton}>
-                  <Text style={styles.quantityText}>+</Text>
+                <Text style={styles.cartQuantityValue}>{item.quantity}</Text>
+                <TouchableOpacity onPress={() => updateQuantity(index, 'increase')} style={styles.cartQuantityButton}>
+                  <Text style={styles.cartQuantityButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
-            <TouchableOpacity onPress={() => handleRemoveItem(index)} style={styles.removeButton}>
-              <Text style={styles.removeText}>✕</Text>
-            </TouchableOpacity>
+            <View style={styles.itemTotalContainer}>
+              <Text style={styles.itemTotalText}>Rp {calculateItemTotal(item).toLocaleString('id-ID')}</Text>
+              <TouchableOpacity onPress={() => removeItemFromCart(index)} style={styles.removeButton}>
+                <Text style={styles.removeText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
+        contentContainerStyle={{ paddingBottom: 16 }}
       />
 
-      {/* Subtotal, shipping fee, and total */}
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Sub Total: Rp {subtotal}</Text>
-        <Text style={styles.totalText}>Biaya Pengantaran: Rp {shippingFee}</Text>
-        <Text style={styles.totalText}>Total: Rp {total}</Text>
+      <View style={styles.summaryContainer}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryText}>Subtotal</Text>
+          <Text style={styles.summaryAmount}>Rp {subtotal.toLocaleString('id-ID')}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryText}>Biaya Pengantaran</Text>
+          <Text style={styles.summaryAmount}>Rp {shippingFee.toLocaleString('id-ID')}</Text>
+        </View>
+        <View style={[styles.summaryRow, styles.grandTotalRow]}>
+          <Text style={[styles.summaryText, styles.grandTotalText]}>Total</Text>
+          <Text style={[styles.summaryAmount, styles.grandTotalText]}>Rp {total.toLocaleString('id-ID')}</Text>
+        </View>
+        <TouchableOpacity style={styles.checkoutButton} onPress={() => console.log('Checkout:', cartItems, 'Total:', total)}>
+          <Text style={styles.checkoutText}>Checkout ({cartItems.length} item)</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Checkout Button */}
-      <TouchableOpacity style={styles.checkoutButton} onPress={() => console.log('Proceed to checkout')}>
-        <Text style={styles.checkoutText}>Checkout</Text>
-      </TouchableOpacity>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: '#f9f9f9', // Warna background sedikit berbeda
+    paddingTop: 40, // Padding atas untuk menghindari overlap dengan status bar
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
+  emptyText: {
+    fontSize: 18,
+    color: '#555',
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+  shopNowButton: {
+    backgroundColor: '#FF7F50',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  shopNowButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 20,
   },
   cartItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 10,
+    padding: 12,
+    elevation: 3, // Shadow untuk Android
+    shadowColor: '#000', // Shadow untuk iOS
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   productImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
+    marginRight: 12,
   },
   cartItemDetails: {
     flex: 1,
-    marginLeft: 16,
+    justifyContent: 'space-between', // Distribusi ruang vertikal
   },
   productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600', // Sedikit lebih tebal
+    color: '#333',
   },
   productPrice: {
-    fontSize: 16,
-    color: '#888',
-  },
-  quantityText: {
     fontSize: 14,
-    color: '#555',
+    color: '#FF7F50', // Warna harga
+    marginVertical: 4,
   },
-  additionalItemsText: {
-    fontSize: 14,
-    color: '#555',
-  },
-  quantityContainer: {
+  quantityControlContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
-  quantityButton: {
-    backgroundColor: '#FF7F50',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  quantityValue: {
-    fontSize: 18,
-    marginHorizontal: 16,
-  },
-  removeButton: {
+  cartQuantityButton: {
+    backgroundColor: '#f0f0f0',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 8,
+  },
+  cartQuantityButtonText: {
+    color: '#333',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cartQuantityValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginHorizontal: 12,
+    minWidth:25,
+    textAlign: 'center',
+  },
+  itemTotalContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between', // Total di atas, hapus di bawah
+    paddingLeft:10,
+  },
+  itemTotalText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  removeButton: {
+    padding: 5, // Area sentuh
   },
   removeText: {
-    fontSize: 18,
-    color: '#FF5A5F',
+    fontSize: 20,
+    color: '#FF3B30', // Warna merah untuk hapus
+    fontWeight:'bold',
   },
-  totalContainer: {
-    marginTop: 20,
+  summaryContainer: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopLeftRadius: 20, // Border radius atas
+    borderTopRightRadius: 20,
+    borderTopWidth:1,
+    borderColor: '#e0e0e0',
+    elevation: 5,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  summaryText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  summaryAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  grandTotalRow: {
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    paddingTop: 16,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 10,
+    marginTop: 5,
   },
-  totalText: {
+  grandTotalText: {
     fontSize: 18,
-    marginBottom: 8,
     fontWeight: 'bold',
+    color: '#FF7F50',
   },
   checkoutButton: {
     backgroundColor: '#FF7F50',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 25, // Tombol lebih bulat
     alignItems: 'center',
+    marginTop: 10,
   },
   checkoutText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
 });
