@@ -1,9 +1,14 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import { CartContext } from '../../context/CartContext'; // Import Context
+import { CartContext } from '../../context/CartContext';
+import Modal from 'react-native-modal';
+import * as Animatable from 'react-native-animatable';
 
 const CartScreen = ({ route, navigation }) => {
   const { cartItems, addItemToCart, removeItemFromCart, updateQuantity } = useContext(CartContext);
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [checkoutDone, setCheckoutDone] = useState(false);
 
   useEffect(() => {
     if (route.params?.newlyAddedItem) {
@@ -74,18 +79,60 @@ const CartScreen = ({ route, navigation }) => {
           <Text style={[styles.summaryText, styles.grandTotalText]}>Total</Text>
           <Text style={[styles.summaryAmount, styles.grandTotalText]}>Rp {total.toLocaleString('id-ID')}</Text>
         </View>
-        <TouchableOpacity style={styles.checkoutButton} onPress={() => console.log('Checkout:', cartItems, 'Total:', total)}>
+        <TouchableOpacity
+          style={styles.checkoutButton}
+          onPress={() => setConfirmVisible(true)}
+        >
           <Text style={styles.checkoutText}>Checkout ({cartItems.length} item)</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal Konfirmasi */}
+      <Modal isVisible={confirmVisible} backdropOpacity={0.4}>
+        <Animatable.View animation="fadeInUp" style={styles.modalContainer}>
+          {checkoutDone ? (
+            <>
+              <Text style={styles.modalText}>🎉 Produk telah dibeli!</Text>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#FF7F50' }]}
+                onPress={() => {
+                  setConfirmVisible(false);
+                  setCheckoutDone(false);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Tutup</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.modalText}>Apakah Anda yakin ingin checkout?</Text>
+              <View style={{ flexDirection: 'row', marginTop: 20 }}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#FF3B30', marginRight: 10 }]}
+                  onPress={() => setConfirmVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>Tidak</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#4CAF50' }]}
+                  onPress={() => setCheckoutDone(true)}
+                >
+                  <Text style={styles.modalButtonText}>Iya</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </Animatable.View>
+      </Modal>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9', // Warna background sedikit berbeda
-    paddingTop: 40, // Padding atas untuk menghindari overlap dengan status bar
+    backgroundColor: '#f9f9f9',
+    paddingTop: 40,
   },
   emptyContainer: {
     flex: 1,
@@ -118,8 +165,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 10,
     padding: 12,
-    elevation: 3, // Shadow untuk Android
-    shadowColor: '#000', // Shadow untuk iOS
+    elevation: 3,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -132,16 +179,16 @@ const styles = StyleSheet.create({
   },
   cartItemDetails: {
     flex: 1,
-    justifyContent: 'space-between', // Distribusi ruang vertikal
+    justifyContent: 'space-between',
   },
   productName: {
     fontSize: 16,
-    fontWeight: '600', // Sedikit lebih tebal
+    fontWeight: '600',
     color: '#333',
   },
   productPrice: {
     fontSize: 14,
-    color: '#FF7F50', // Warna harga
+    color: '#FF7F50',
     marginVertical: 4,
   },
   quantityControlContainer: {
@@ -167,13 +214,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginHorizontal: 12,
-    minWidth:25,
+    minWidth: 25,
     textAlign: 'center',
   },
   itemTotalContainer: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between', // Total di atas, hapus di bawah
-    paddingLeft:10,
+    justifyContent: 'space-between',
+    paddingLeft: 10,
   },
   itemTotalText: {
     fontSize: 15,
@@ -181,19 +228,19 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   removeButton: {
-    padding: 5, // Area sentuh
+    padding: 5,
   },
   removeText: {
     fontSize: 20,
-    color: '#FF3B30', // Warna merah untuk hapus
-    fontWeight:'bold',
+    color: '#FF3B30',
+    fontWeight: 'bold',
   },
   summaryContainer: {
     backgroundColor: '#fff',
     padding: 16,
-    borderTopLeftRadius: 20, // Border radius atas
+    borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    borderTopWidth:1,
+    borderTopWidth: 1,
     borderColor: '#e0e0e0',
     elevation: 5,
   },
@@ -225,7 +272,7 @@ const styles = StyleSheet.create({
   checkoutButton: {
     backgroundColor: '#FF7F50',
     paddingVertical: 14,
-    borderRadius: 25, // Tombol lebih bulat
+    borderRadius: 25,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -233,6 +280,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: 'bold',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
 

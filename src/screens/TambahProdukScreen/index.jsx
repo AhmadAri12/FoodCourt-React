@@ -1,6 +1,8 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 import { ProductContext } from '../../context/ProductContext';
+import Modal from 'react-native-modal';
+import * as Animatable from 'react-native-animatable';
 
 const TambahProdukScreen = ({ navigation }) => {
   const { addProduct } = useContext(ProductContext);
@@ -10,24 +12,21 @@ const TambahProdukScreen = ({ navigation }) => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleSubmit = () => {
     if (!name || !price || !image) {
-      Alert.alert('Gagal', 'Nama, Harga, dan Gambar wajib diisi.');
+      alert('Nama, Harga, dan Gambar wajib diisi.');
       return;
     }
 
-    const newProduct = {
-      name,
-      category,
-      description,
-      price,
-      image,
-    };
-
+    const newProduct = { name, category, description, price, image };
     addProduct(newProduct);
-    Alert.alert('Sukses', 'Produk berhasil ditambahkan!');
-    navigation.goBack(); // kembali ke home
+    setModalVisible(true);
+    setTimeout(() => {
+      setModalVisible(false);
+      navigation.goBack();
+    }, 1500);
   };
 
   return (
@@ -48,6 +47,12 @@ const TambahProdukScreen = ({ navigation }) => {
       <TextInput style={styles.input} value={image} onChangeText={setImage} />
 
       <Button title="Tambah Produk" onPress={handleSubmit} color="#FF7F50" />
+
+      <Modal isVisible={modalVisible} backdropOpacity={0.3}>
+        <Animatable.View animation="zoomIn" style={styles.modalContainer}>
+          <Text style={styles.modalText}>✅ Produk telah ditambahkan!</Text>
+        </Animatable.View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -76,6 +81,17 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 6,
     height: 100,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF7F50',
   },
 });
 
