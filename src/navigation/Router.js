@@ -7,7 +7,8 @@ import HomeScreen from '../screens/HomeScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfilScreen from '../screens/ProfilScreen';
 import Detailproduk from '../screens/Detailproduk';
-import TambahProdukScreen from '../screens/TambahProdukScreen'; // ✅ Tambahkan import ini
+import TambahProdukScreen from '../screens/TambahProduk';
+import EditProdukScreen from '../screens/EditProduk';
 
 // Ikon dari iconsax-react-native
 import { Home2, ShoppingCart, ProfileCircle } from 'iconsax-react-native';
@@ -95,11 +96,19 @@ const Router = () => {
         }}
       />
       <Stack.Screen
-        name="TambahProduk" // ✅ Tambahkan route ini
+        name="TambahProduk"
         component={TambahProdukScreen}
         options={{
           headerShown: true,
           title: 'Tambah Produk',
+        }}
+      />
+      <Stack.Screen
+        name="EditProduk"
+        component={EditProdukScreen}
+        options={{
+          headerShown: true,
+          title: 'Edit Produk',
         }}
       />
     </Stack.Navigator>
