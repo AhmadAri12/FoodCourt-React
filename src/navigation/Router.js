@@ -9,6 +9,7 @@ import ProfilScreen from '../screens/ProfilScreen';
 import Detailproduk from '../screens/Detailproduk';
 import TambahProdukScreen from '../screens/TambahProduk';
 import EditProdukScreen from '../screens/EditProduk';
+import EditProfil from '../screens/EditProfil';
 
 // Ikon dari iconsax-react-native
 import { Home2, ShoppingCart, ProfileCircle } from 'iconsax-react-native';
@@ -111,6 +112,15 @@ const Router = () => {
           title: 'Edit Produk',
         }}
       />
+      <Stack.Screen
+  name="EditProfil"
+  component={EditProfil}
+  options={{
+    headerShown: true,
+    title: 'Edit Profil',
+  }}
+/>
+
     </Stack.Navigator>
   );
 };
